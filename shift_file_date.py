@@ -32,13 +32,13 @@ def shift_timestamp_backwards_to_date(timestamp, date):
 
 
 def extract_args(argv):
-    try:
-        opts, args = getopt.getopt(argv, 'p:d:', ['path=', 'date=', 'help'])
-    except getopt.GetoptError as e:
-        usage()
+    opts, args = getopt.getopt(argv, 'p:d:', ['path=', 'date=', 'help'])
     path = None
     date = None
     for opt, arg in opts:
+        if opt == '--help':
+            usage()
+            sys.exit(0)
         if opt in ['-p', '--path']:
             path = arg
         if opt in ['-d', '--date']:
@@ -47,7 +47,10 @@ def extract_args(argv):
     return input
 
 def usage():
-    print('Manual')
+    print(f'This script chagnes the Modified Timestamp of a file or files in directory (non recursive).\n'
+          f'It keeps the time of day (hours:minutes:...) of the original file and changes the date only.\n\n'
+          f'Usage: python3 {sys.argv[0]} --path=<path to file or directory> --date=<desired date in iso format>.\n\n'
+          f'Example: python3 {sys.argv[0]} --path=path/to/dir_or_file --date=2020-01-02')
 
 
 if __name__ == '__main__':
@@ -56,7 +59,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
         usage()
-        os.exit(1)
+        sys.exit(1)
 
 
 
