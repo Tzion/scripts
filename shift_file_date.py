@@ -4,64 +4,73 @@ from datetime import datetime
 from datetime import timedelta
 
 
+path = None
+days = None
+dry_run = False
+
 def main(argv):
     path, date = extract_args(argv)
 
     if os.path.isdir(path):
         for f in os.listdir(path):
-            if not f.startswith('.'):
+            if not f.startswith('.') and os.path.isfile(path+'/'+f):
                 shift_file_timestamp(path+'/'+f, date)
     else:
         shift_file_timestamp(path, date)
 
-def shift_file_timestamp(file_path, days_to_shift):
+def shift_file_timestamp(file_path, days):
     a_time = os.lstat(file_path).st_atime
     m_time = os.lstat(file_path).st_mtime
-    new_m_time = shift_timestamp_by_x_days(m_time, days_to_shift)
-    print(f'Changing Modified timestamp of {file_path} from {datetime.fromtimestamp(m_time)} to {datetime.fromtimestamp(new_m_time)}')
-    os.utime(file_path, (a_time, new_m_time))
+    new_m_time = shift_timestamp_by_x_days(m_time, days)
+    dry_run_prefix = '--dry-run: ' if dry_run else ''
+    print(f'{dry_run_prefix}Changing Modified-Timestamp of {file_path} from {datetime.fromtimestamp(m_time)} to {datetime.fromtimestamp(new_m_time)}')
+    if not dry_run:
+        os.utime(file_path, (a_time, new_m_time))
 
 
 
 def shift_timestamp_by_x_days(timestamp, days):
     original_date = datetime.fromtimestamp(timestamp)
-    desired_date = original_date - timedelta(days=days)
+    desired_date = original_date + timedelta(days=int(days))
     desired_timestamp = datetime.timestamp(desired_date)
     return desired_timestamp
 
 
 def extract_args(argv):
-    opts, args = getopt.getopt(argv, 'p:d:b:', ['path=', 'days_to_shift=', 'backwards', 'help'])
-    path = None
-    days = None
-    backwards = False
+    try:
+        opts, args = getopt.getopt(argv, 'p:d:h', ['path=', 'days=', 'dry-run', 'help'])
+    except getopt.GetoptError as err:
+        print(err)
+        sys.exit(2)
+    global dry_run
     for opt, arg in opts:
-        if opt == '--help':
-            usage()
-            sys.exit(0)
+        if opt in ['--help', 'h']:
+            help()
+            sys.exit(2)
         if opt in ['-p', '--path']:
             path = arg
-        if opt in ['-d', '--days_to_shift']:
-            days = args
-        if opt in ['b', '--backwards']:
-            backwards = True
-    days = -days if backwards else days
+        if opt in ['-d', '--days']:
+            days = arg
+        if opt in ['--dry-run']:
+            dry_run = True
     input = (path, days)
     return input
 
-def usage():
-    print(f'This script shifts by given days the Modified Timestamp of a file or files in directory (non recursive).\n'
-          f'Usage: python3 {sys.argv[0]} --path=<path to file or directory> --days_to_shift=<desired date in iso format> [--backwards].\n\n'
-          f'Example: python3 {sys.argv[0]} --path=path/to/dir_or_file --date=10 --backwards\n In the above example the date of the files in the directory will shift by 10 days backwards')
+
+usage = f'\n{sys.argv[0]}: Shifts the Modified Date of files by given days forwards or backwards'\
+        """
+        
+    Options:
+        -p --path       path to file or directory to perform the date shift upon (in case or directory it applies to all the files in the first level only -
+                        not including directories or hidden files) 
+        -d --days       number of days for the date shift (negative integer for backward shift)
+        --dry-run       print out the date changes without doing the actual change on the files
+        -h --help       show this screen
+        """
+
+def help():
+    print(usage)
 
 
 if __name__ == '__main__':
-    try: 
-        main(sys.argv[1:])
-    except Exception as e:
-        print(e)
-        usage()
-        sys.exit(1)
-
-
-
+    main(sys.argv[1:])
