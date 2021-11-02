@@ -23,7 +23,7 @@ def shift_file_timestamp(file_path, days):
     m_time = os.lstat(file_path).st_mtime
     new_m_time = shift_timestamp_by_x_days(m_time, days)
     dry_run_prefix = '--dry-run: ' if dry_run else ''
-    print(f'{dry_run_prefix}Changing Modified-Timestamp of {file_path} from {datetime.fromtimestamp(m_time)} to {datetime.fromtimestamp(new_m_time)}')
+    print(f'{dry_run_prefix}Changing the Modified-Timestamp of {file_path} from {datetime.fromtimestamp(m_time)} to {datetime.fromtimestamp(new_m_time)}')
     if not dry_run:
         os.utime(file_path, (a_time, new_m_time))
 
@@ -41,6 +41,7 @@ def extract_args(argv):
         opts, args = getopt.getopt(argv, 'p:d:h', ['path=', 'days=', 'dry-run', 'help'])
     except getopt.GetoptError as err:
         print(err)
+        help()
         sys.exit(2)
     global dry_run
     for opt, arg in opts:

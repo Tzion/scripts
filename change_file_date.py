@@ -9,20 +9,20 @@ def main(argv):
     if os.path.isdir(path):
         for f in os.listdir(path):
             if not f.startswith('.'):
-                shift_file_timestamp(path+'/'+f, date)
+                change_file_timestamp(path+'/'+f, date)
     else:
-        shift_file_timestamp(path, date)
+        change_file_timestamp(path, date)
 
-def shift_file_timestamp(file_path, date):
+def change_file_timestamp(file_path, date):
     a_time = os.lstat(file_path).st_atime
     m_time = os.lstat(file_path).st_mtime
-    new_m_time = shift_timestamp_backwards_to_date(m_time, date)
-    print(f'Changing Modified timestamp of {file_path} from {datetime.fromtimestamp(m_time)} to {datetime.fromtimestamp(new_m_time)}')
+    new_m_time = change_timestamp_to_date(m_time, date)
+    print(f'Changing the Modified Timestamp of {file_path} from {datetime.fromtimestamp(m_time)} to {datetime.fromtimestamp(new_m_time)}')
     os.utime(file_path, (a_time, new_m_time))
 
 
 
-def shift_timestamp_backwards_to_date(timestamp, date):
+def change_timestamp_to_date(timestamp, date):
     ''' returns timestamp of date (iso format) with the original time of day of timestamp (H:M:S) '''
     time_in_day = datetime.fromtimestamp(timestamp).time()
     date = datetime.fromisoformat(date).date()
