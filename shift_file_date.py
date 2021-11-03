@@ -49,7 +49,7 @@ def extract_args(argv):
             help()
             sys.exit(2)
         if opt in ['-p', '--path']:
-            path = arg
+            path = os.path.expanduser(arg)
         if opt in ['-d', '--days']:
             days = arg
         if opt in ['--dry-run']:
