@@ -21,39 +21,48 @@ def add_timestamp_to_filename(dir, file, new_name, prefix, dry_run):
     name = new_name if new_name else filename
     final_name = timestamp + '_' + name + ext if prefix else name + '_' + timestamp + ext
     final_path = os.path.join(dir, final_name)
-    print(f'Changing file {original_path} to {final_path}')
-    if not dry_run:
-        os.rename(original_path, final_path)
+    safe_rename(original_path, final_path, dry_run)
+
+def safe_rename(src, dst, dry_run):
+    if os.path.exists(dst):
+        raise FileExistsError(f'File at {dst} already exists. Change timestamp format or name to avoid overriding')
+    else:
+        print(f'Changing file {src} to {dst}')
+        if not dry_run:
+            os.rename(src, dst)
 
 
 def format_time(timestamp):
     ''' returns timestamp of date (iso format) with the original time of day of timestamp (H:M:S) '''
     date_time = datetime.fromtimestamp(timestamp)
-    formatted = date_time.strftime("%y-%m-%d_%H%M%S_%f")[:-8]
+    formatted = date_time.strftime("%y-%m-%d_%H%M%S_%f")[:-9]
     return formatted
 
 
 def extract_args(argv):
-    opts, args = getopt.getopt(argv, '', ['path=', 'prefix', 'rename=', 'dry-run', 'help'])
-    path = None
-    prefix = False
-    new_name = None
-    dry_run = False
-    for opt, arg in opts:
-        if opt == '--help':
-            help()
-            sys.exit(0)
-        if opt in ['-p', '--path']:
-            path = arg
-        if opt in ['--prefix']:
-            prefix = True
-        if opt in ['--rename']:
-            new_name = arg
-        if opt in ['--dry-run']:
-            dry_run = True
-            
-    input = (path, new_name, prefix, dry_run)
-    return input
+    try:
+        opts, args = getopt.getopt(argv, '', ['path=', 'prefix', 'rename=', 'dry-run', 'help'])
+        path = None
+        prefix = False
+        new_name = None
+        dry_run = False
+        for opt, arg in opts:
+            if opt == '--help':
+                help()
+                sys.exit(0)
+            if opt in ['-p', '--path']:
+                path = arg
+            if opt in ['--prefix']:
+                prefix = True
+            if opt in ['--rename']:
+                new_name = arg
+            if opt in ['--dry-run']:
+                dry_run = True
+                
+        input = (path, new_name, prefix, dry_run)
+        return input
+    except:
+        help()
 
 usage = f'\n{sys.argv[0]}: Attaches the Modified Timestamp to the file name. Works on a file or files in a directory (non recursive).'\
         """
@@ -75,5 +84,4 @@ if __name__ == '__main__':
         main(sys.argv[1:])
     except Exception as e:
         print(e)
-        usage()
         sys.exit(1)
