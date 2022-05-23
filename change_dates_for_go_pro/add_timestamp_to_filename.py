@@ -1,6 +1,7 @@
 import getopt, sys
 import os
 from datetime import datetime
+from traceback import print_exc
 
 class Args:
     path = ''
@@ -8,6 +9,7 @@ class Args:
     prefix = False
     dry_run = False
     format = '%y-%m-%d'
+    millis = False
     
 args = Args()
 
@@ -43,13 +45,17 @@ def safe_rename(src, dst):
 def format_time(timestamp, format):
     ''' returns timestamp of date (iso format) with the original time of day of timestamp (H:M:S) '''
     date_time = datetime.fromtimestamp(timestamp)
-    formatted = date_time.strftime("%y-%m-%d_%H%M%S_%f")[:-9]
+    if args.millis:
+        format += format + '_%f'
+        formatted = date_time.strftime(format)[:-3]
+    else:
+        formatted = date_time.strftime(format)
     return formatted
 
 
 def extract_args(argv):
     try:
-        opts, _ = getopt.getopt(argv, '', ['path=', 'prefix', 'rename=', 'dry-run', 'date=', 'format=', 'help'])
+        opts, _ = getopt.getopt(argv, '', ['path=', 'prefix', 'rename=', 'dry-run', 'date=', 'format=', 'millis', 'help'])
         for opt, arg in opts:
             if opt == '--help':
                 help()
@@ -64,6 +70,8 @@ def extract_args(argv):
                 args.dry_run = True
             if opt in ['--format']:
                 args.format= arg
+            if opt in ['--millis']:
+                args.millis = True
     except:
         help()
 
@@ -76,7 +84,8 @@ usage = f'\n{sys.argv[0]}: Attaches the Modified Timestamp to the file name. Wor
         --prefix        when this flag is supplied - attached the timestamp before the filename. Default is false.
         --rename        override the file name with the new name provided
         --dry-run       print out the name changes without doing the actual change on the files
-        --format        Format of the timestamp (Defualt is "%y-%m-%d. Options that includes time: %y-%m-%d_%H%M%S)
+        --format        Format of the timestamp (Defualt is "%y-%m-%d. Options that includes time is: %y-%m-%d_%H%M%S)
+        --millis        Attaches milliseconds to the timestamp
         -h --help       show this screen
         """
 
@@ -87,5 +96,5 @@ if __name__ == '__main__':
     try: 
         main(sys.argv[1:])
     except Exception as e:
-        print(e)
-        sys.exit(1)
+        print_exc()
+        exit(1)
