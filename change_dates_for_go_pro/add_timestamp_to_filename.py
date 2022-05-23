@@ -3,8 +3,8 @@ import os
 from datetime import datetime
 
 class Args:
-    path = None
-    new_name = None
+    path = ''
+    new_name = ''
     prefix = False
     dry_run = False
     format = '%y-%m-%d'
@@ -12,16 +12,16 @@ class Args:
 args = Args()
 
 def main(argv):
-    path, new_name, prefix, dry_run = extract_args(argv)
+    extract_args(argv)
 
-    if os.path.isdir(path):
-        for f in os.listdir(path):
+    if os.path.isdir(args.path):
+        for f in os.listdir(args.path):
             if not f.startswith('.'):
-                add_timestamp_to_filename(path, f, new_name, prefix, dry_run)
+                add_timestamp_to_filename(args.path, f, args.new_name, args.prefix)
     else:
-        add_timestamp_to_filename(os.path.split(path)[0], os.path.split(path)[1], new_name, prefix, dry_run)
+        add_timestamp_to_filename(os.path.split(args.path)[0], os.path.split(args.path)[1], args.new_name, args.prefix)
 
-def add_timestamp_to_filename(dir, file, new_name, prefix, dry_run):
+def add_timestamp_to_filename(dir, file, new_name, prefix):
     original_path = os.path.join(dir, file)
     m_time = os.lstat(original_path).st_mtime
     timestamp = format_time(m_time, args.format)
@@ -29,14 +29,14 @@ def add_timestamp_to_filename(dir, file, new_name, prefix, dry_run):
     name = new_name if new_name else filename
     final_name = timestamp + '_' + name + ext if prefix else name + '_' + timestamp + ext
     final_path = os.path.join(dir, final_name)
-    safe_rename(original_path, final_path, dry_run)
+    safe_rename(original_path, final_path)
 
-def safe_rename(src, dst, dry_run):
+def safe_rename(src, dst):
     if os.path.exists(dst):
         raise FileExistsError(f'File at {dst} already exists. Change timestamp format or name to avoid overriding')
     else:
         print(f'Changing file {src} to {dst}')
-        if not dry_run:
+        if not args.dry_run:
             os.rename(src, dst)
 
 
@@ -64,9 +64,6 @@ def extract_args(argv):
                 args.dry_run = True
             if opt in ['--format']:
                 args.format= arg
-                
-        input = (args.path, args.new_name, args.prefix, args.dry_run)
-        return input
     except:
         help()
 
@@ -79,7 +76,7 @@ usage = f'\n{sys.argv[0]}: Attaches the Modified Timestamp to the file name. Wor
         --prefix        when this flag is supplied - attached the timestamp before the filename. Default is false.
         --rename        override the file name with the new name provided
         --dry-run       print out the name changes without doing the actual change on the files
-        --format        Format of the timestamp (Defualt is "%y-%m-%d. Other options is: %y-%m-%d_%H%M%S)
+        --format        Format of the timestamp (Defualt is "%y-%m-%d. Options that includes time: %y-%m-%d_%H%M%S)
         -h --help       show this screen
         """
 
