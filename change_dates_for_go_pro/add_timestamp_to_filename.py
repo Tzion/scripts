@@ -2,6 +2,7 @@ import getopt, sys
 import os
 from datetime import datetime
 from traceback import print_exc
+import builtins
 
 class Args:
     path = ''
@@ -12,10 +13,14 @@ class Args:
     millis = False
     
 args = Args()
+safe_mode = True
 
 def main(argv):
     extract_args(argv)
+    change_names()
 
+
+def change_names():
     if os.path.isdir(args.path):
         for f in os.listdir(args.path):
             if not f.startswith('.'):
@@ -35,10 +40,10 @@ def add_timestamp_to_filename(dir, file, new_name, prefix):
 
 def safe_rename(src, dst):
     if os.path.exists(dst):
-        raise FileExistsError(f'File at {dst} already exists. Change timestamp format or name to avoid overriding')
+        raise FileExistsError(f'File at {dst} already exists. Aborting to avoid override. Change timestamp format or name to avoid overriding')
     else:
         print(f'Changing file {src} to {dst}')
-        if not args.dry_run:
+        if not args.dry_run and not safe_mode:
             os.rename(src, dst)
 
 
@@ -92,9 +97,25 @@ usage = f'\n{sys.argv[0]}: Attaches the Modified Timestamp to the file name. Wor
 def help():
     print(usage)
 
+def print(msg):
+    if safe_mode:
+        pass
+    else:
+        builtins.print(msg)
+         
 if __name__ == '__main__':
     try: 
-        main(sys.argv[1:])
+        '''
+        First run is in safe_mode (if dry-run == False) to notify for possible overrides.
+        Notice that some overrides will be only catch on live mode -> those that occur becuase of files that are changing during the process
+        '''
+        extract_args(sys.argv[1:])
+        safe_mode = not args.dry_run
+        if safe_mode:
+           change_names() 
+           safe_mode = False
+        change_names()
+        print(f"{'DRY RUN: ' if args.dry_run else ''}Done successfully")
     except Exception as e:
         print_exc()
         exit(1)
